@@ -4,7 +4,7 @@ class Trophies
 {
     /**
      * Unlocks a trophy for the authenticated user by trophy ID.
-     */
+    **/
     public static function unlock(trophyId:Int, onResult:Bool->Void = null):Void 
     {
         if (!GameJolt.initialized) {
@@ -27,7 +27,7 @@ class Trophies
 
     /**
      * Fetches all trophies or user trophy progress.
-     */
+    **/
     public static function fetch(achievedOnly:Bool = false, onResult:Array<Dynamic>->Void = null):Void 
     {
         var params:Map<String, String> = new Map();
