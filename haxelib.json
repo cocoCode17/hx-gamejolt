@@ -1,0 +1,11 @@
+{
+  "name": "hx-gamejolt",
+  "url": "https://github.com/cocoCode17/hx-gamejolt",
+  "license": "MIT",
+  "tags": ["gamejolt", "api", "haxelib", "flixel", "gj"],
+  "description": "A lightweight, modern GameJolt API for Haxe and HaxeFlixel with no heavy dependencies.",
+  "version": "1.0.0",
+  "classPath": "src/",
+  "releasenote": "First Version focused on Achievements and Auth support.",
+  "contributors": ["cocoCode17"]
+}

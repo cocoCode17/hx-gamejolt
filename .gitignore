@@ -1,0 +1,5 @@
+export/
+*.hxproj
+*.hxml
+.haxelib/
+.DS_Store
