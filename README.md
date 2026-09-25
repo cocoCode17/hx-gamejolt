@@ -161,3 +161,4 @@ DataStore.get("high_score", false, function(data:String) {
 ## License
 
 This project is licensed under the MIT License. Feel free to use and modify it in any commercial or non-commercial projects.
+```
