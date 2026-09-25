@@ -1,11 +1,7 @@
----
-
 ```markdown
 # hx-gamejolt
 
 A modern, lightweight, and dependency-free **GameJolt API v1.2** wrapper written in pure **Haxe**. Designed to work seamlessly across Desktop, Mobile, and HTML5 target platforms without requiring heavy external libraries.
-
----
 
 ## Key Features
 
