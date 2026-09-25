@@ -2,35 +2,54 @@ package gamejolt;
 
 import haxe.Http;
 import haxe.Json;
-import haxe.io.Bytes;
+import haxe.crypto.Md5;
 
+/**
+ * The core manager for hx-gamejolt. 
+ * Handles initial setup, user authentication, and signing HTTP requests for GameJolt API v1.2.
+ */
 class GameJolt 
 {
+    /** The Game ID provided by GameJolt. */
     public static var gameId:Int = 0;
+
+    /** The Game Private Key from your GameJolt dashboard. Keep this safe! */
     public static var privateKey:String = "";
+
+    /** The username of the currently logged-in player. */
     public static var username:String = "";
+
+    /** The Game Token of the currently logged-in player. */
     public static var userToken:String = "";
+
+    /** Returns true if a user is successfully logged in. */
     public static var initialized(default, null):Bool = false;
 
-    // GameJolt official API v1.2 endpoint
-    private static inline var API_URL:String = "https://api.gamejolt.com/api/game/v1_2/";
+    private static inline var API_URL:String = "https://api.gamejolt.com/api/game/v1_2";
 
     /**
-     * Sets up your game credentials. Call this once when your game boots up!
+     * Sets up the library with your game's credentials. Call this before doing anything else!
+     * 
+     * @param id The Game ID assigned to your project.
+     * @param key The Game Private Key found in your API settings.
      */
     public static function init(id:Int, key:String):Void 
     {
         gameId = id;
-        privateKey = key;
+        privateKey = StringTools.trim(key);
     }
 
     /**
-     * Tries to log in the player using their GameJolt username and user token.
+     * Attempts to log in a player with their GameJolt username and Game Token.
+     * 
+     * @param user The player's GameJolt username.
+     * @param token The player's Game Token (NOT their main account password).
+     * @param onResult Callback returning true if authentication succeeded.
      */
     public static function login(user:String, token:String, onResult:Bool->Void):Void 
     {
-        username = user.toLowerCase();
-        userToken = token.toLowerCase();
+        username = StringTools.trim(user);
+        userToken = StringTools.trim(token);
 
         var params = [
             "username" => username,
@@ -51,7 +70,7 @@ class GameJolt
     }
 
     /**
-     * Clears local user data and resets authentication status.
+     * Logs out the current player and resets the user session locally.
      */
     public static function logout():Void 
     {
@@ -61,119 +80,48 @@ class GameJolt
     }
 
     /**
-     * Sends an authenticated GET request to GameJolt with a custom MD5 signature.
+     * Internal function that builds, signs, and executes HTTP requests to GameJolt.
+     * Generates a lowercase MD5 signature based on the endpoint, parameters, and private key.
+     * 
+     * @param endpoint The API endpoint path (e.g. "scores/add").
+     * @param params Key-value map of parameters to include in the request.
+     * @param onResult Callback returning the parsed JSON response object.
      */
     public static function request(endpoint:String, params:Map<String, String>, onResult:Dynamic->Void):Void 
     {
         if (gameId == 0 || privateKey == "") {
-            trace("[GameJolt] Heads up: Call GameJolt.init() before making API requests.");
+            trace("[GameJolt] Error: Library uninitialized. Call GameJolt.init() first.");
             if (onResult != null) onResult(null);
             return;
         }
 
         var queryString = 'game_id=${gameId}';
         for (key in params.keys()) {
-            queryString += '&${key}=${params.get(key)}';
+            queryString += '&${key}=${StringTools.trim(params.get(key))}';
         }
 
-        // GameJolt expects the signature to be an MD5 hash of (URL + privateKey)
-        var fullQueryToSign = '${API_URL}${endpoint}/?${queryString}${privateKey}';
-        var signature = md5(fullQueryToSign);
-        var finalUrl = '${API_URL}${endpoint}/?${queryString}&signature=${signature}';
+        var baseUrl = '${API_URL}/${endpoint}/?${queryString}';
+        var stringToSign = baseUrl + privateKey;
+        var signature = Md5.encode(stringToSign).toLowerCase();
+        var finalUrl = '${baseUrl}&signature=${signature}';
 
         var http = new Http(finalUrl);
+        
         http.onData = function(data:String) {
             try {
                 var json:Dynamic = Json.parse(data);
                 if (onResult != null) onResult(json.response);
             } catch (e:Dynamic) {
-                trace("[GameJolt] Failed to parse API response JSON.");
+                trace("[GameJolt] Failed to parse API JSON response.");
                 if (onResult != null) onResult(null);
             }
         };
 
         http.onError = function(err:String) {
-            trace('[GameJolt] Network issue on ${endpoint}: ${err}');
+            trace('[GameJolt] Network request failed for ${endpoint}: ${err}');
             if (onResult != null) onResult(null);
         };
 
         http.request(false);
-    }
-
-    // =========================================================================
-    // Native MD5 Hashing (Keeps the library lightweight & dependency-free)
-    // =========================================================================
-    private static function md5(s:String):String 
-    {
-        var bytes = Bytes.ofString(s);
-        var l = bytes.length;
-        var oldL = l;
-        l += 9;
-        l += 64 - (l % 64);
-
-        var b = Bytes.alloc(l);
-        b.blit(0, bytes, 0, oldL);
-        b.set(oldL, 0x80);
-
-        var words = new Array<Int>();
-        for (i in 0...Std.int(l / 4)) {
-            words.push(b.get(i * 4) | (b.get(i * 4 + 1) << 8) | (b.get(i * 4 + 2) << 16) | (b.get(i * 4 + 3) << 24));
-        }
-
-        words[Std.int(((l - 64) >> 2) + 14)] = oldL * 8;
-
-        var a = 0x67452301, bb = 0xefcdab89, c = 0x98badcfe, d = 0x10325476;
-        var s1 = [7, 12, 17, 22], s2 = [5, 9, 14, 20], s3 = [4, 11, 16, 23], s4 = [6, 10, 15, 21];
-
-        var i = 0;
-        while (i < words.length) {
-            var aa = a, ab = bb, ac = c, ad = d;
-
-            for (j in 0...64) {
-                var f = 0, g = 0, shift = 0;
-                if (j < 16) {
-                    f = (bb & c) | ((~bb) & d);
-                    g = j;
-                    shift = s1[j % 4];
-                } else if (j < 32) {
-                    f = (d & bb) | ((~d) & c);
-                    g = (5 * j + 1) % 16;
-                    shift = s2[j % 4];
-                } else if (j < 48) {
-                    f = bb ^ c ^ d;
-                    g = (3 * j + 5) % 16;
-                    shift = s3[j % 4];
-                } else {
-                    f = c ^ (bb | (~d));
-                    g = (7 * j) % 16;
-                    shift = s4[j % 4];
-                }
-                var k = words[i + g];
-                var constVal = Std.int(Math.floor(Math.abs(Math.sin(j + 1)) * 4294967296.0));
-                
-                var temp = d;
-                d = c;
-                c = bb;
-                var sum = a + f + k + constVal;
-                bb = bb + ((sum << shift) | (sum >>> (32 - shift)));
-                a = temp;
-            }
-
-            a += aa; bb += ab; c += ac; d += ad;
-            i += 16;
-        }
-
-        return toHex(a) + toHex(bb) + toHex(c) + toHex(d);
-    }
-
-    private static function toHex(n:Int):String 
-    {
-        var s = "";
-        var hexChars = "0123456789abcdef";
-        for (i in 0...4) {
-            var byte = (n >> (i * 8)) & 0xFF;
-            s += hexChars.charAt(byte >> 4) + hexChars.charAt(byte & 0x0F);
-        }
-        return s;
     }
 }
