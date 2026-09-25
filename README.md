@@ -1,4 +1,3 @@
-```markdown
 # hx-gamejolt
 
 A modern, lightweight, and dependency-free **GameJolt API v1.2** wrapper written in pure **Haxe**. Designed to work seamlessly across Desktop, Mobile, and HTML5 target platforms without requiring heavy external libraries.
@@ -161,4 +160,3 @@ DataStore.get("high_score", false, function(data:String) {
 ## License
 
 This project is licensed under the MIT License. Feel free to use and modify it in any commercial or non-commercial projects.
-```
