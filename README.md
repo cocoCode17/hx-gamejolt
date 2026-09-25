@@ -22,7 +22,7 @@ A modern, lightweight, and dependency-free **GameJolt API v1.2** wrapper written
 Install the library directly from the GitHub repository:
 
 ```bash
-haxelib git hx-gamejolt [https://github.com/cocoCode17/hx-gamejolt](https://github.com/cocoCode17/hx-gamejolt)
+haxelib git hx-gamejolt https://github.com/cocoCode17/hx-gamejolt
 
 ```
 
