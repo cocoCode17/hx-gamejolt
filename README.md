@@ -11,8 +11,6 @@ A modern, lightweight, and dependency-free **GameJolt API v1.2** wrapper written
 * **Strong Type Definitions**: Provides clean autocompletion for trophy, score, and user data models.
 * **Cross-Platform**: Compatible with HaxeFlixel, OpenFL, or any standalone Haxe framework.
 
----
-
 ## Installation
 
 Install the library directly from the GitHub repository:
